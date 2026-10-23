@@ -26,9 +26,22 @@ type ResultAllBuffered<
 	BufferStderr extends boolean | undefined,
 > = BufferStdout extends unknown
 	? BufferStderr extends unknown
-		? ResultAllOutput<Omit<OptionsType, 'buffer'> & {buffer: {stdout: BufferStdout; stderr: BufferStderr}}>
+		? ResultAllOutput<WithBufferFlags<OptionsType, BufferStdout, BufferStderr>>
 		: never
 	: never;
+
+// With `exactOptionalPropertyTypes`, `Omit<OptionsType, ...>` is only accepted as `CommonOptions` behind a conditional (like `ScriptOptions`), and `buffer` cannot hold an explicit `undefined` flag, so that flag is left out instead.
+type WithBufferFlags<
+	OptionsType extends CommonOptions,
+	BufferStdout extends boolean | undefined,
+	BufferStderr extends boolean | undefined,
+> = OptionsType extends CommonOptions
+	? Omit<OptionsType, 'buffer'> & {buffer: BufferFlag<'stdout', BufferStdout> & BufferFlag<'stderr', BufferStderr>}
+	: never;
+
+type BufferFlag<Key extends string, Value extends boolean | undefined> = Value extends boolean
+	? Record<Key, Value>
+	: {};
 
 type ResultAllOutput<OptionsType extends CommonOptions> = ResultStdio<
 	AllMainFd<OptionsType>,
